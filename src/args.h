@@ -17,7 +17,7 @@
 namespace fasttext {
 
 enum class model_name : int { cbow = 1, sg, sup };
-enum class loss_name : int { hs = 1, ns, softmax, ova };
+enum class loss_name : int { hs = 1, ns, softmax, ova, focal };
 enum class metric_name : int { f1score = 1, labelf1score };
 
 class Args {
@@ -39,6 +39,8 @@ class Args {
   int minCount;
   int minCountLabel;
   int neg;
+  double gamma;
+  double beta;
   int wordNgrams;
   loss_name loss;
   model_name model;
@@ -73,7 +75,7 @@ class Args {
   void printAutotuneHelp();
   void printQuantizationHelp();
   void save(std::ostream&);
-  void load(std::istream&);
+  void load(std::istream&, int32_t version);
   void dump(std::ostream&) const;
   bool hasAutotune() const;
   bool isManual(const std::string& argName) const;

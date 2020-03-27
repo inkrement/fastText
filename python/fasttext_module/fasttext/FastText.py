@@ -50,7 +50,7 @@ class _FastText(object):
             arg_names = ['lr', 'dim', 'ws', 'epoch', 'minCount',
                          'minCountLabel', 'minn', 'maxn', 'neg', 'wordNgrams',
                          'loss', 'bucket', 'thread', 'lrUpdateRate', 't',
-                         'label', 'verbose', 'pretrainedVectors']
+                         'label', 'verbose', 'pretrainedVectors', 'gamma', 'beta']
             for arg_name in arg_names:
                 setattr(self, arg_name, getattr(args, arg_name))
 
@@ -339,6 +339,8 @@ def _parse_loss_string(string):
         return loss_name.softmax
     if string == "ova":
         return loss_name.ova
+    if string == "focal":
+        return loss_name.focal
     else:
         raise ValueError("Unrecognized loss name")
 
@@ -390,6 +392,8 @@ unsupervised_default = {
     'thread': multiprocessing.cpu_count() - 1,
     'lrUpdateRate': 100,
     't': 1e-4,
+    'gamma': 2,
+    'beta': 1,
     'label': "__label__",
     'verbose': 2,
     'pretrainedVectors': "",
@@ -455,7 +459,7 @@ def train_supervised(*kargs, **kwargs):
 
     arg_names = ['input', 'lr', 'dim', 'ws', 'epoch', 'minCount',
                  'minCountLabel', 'minn', 'maxn', 'neg', 'wordNgrams', 'loss', 'bucket',
-                 'thread', 'lrUpdateRate', 't', 'label', 'verbose', 'pretrainedVectors',
+                 'thread', 'lrUpdateRate', 't', 'gamma', 'beta', 'label', 'verbose', 'pretrainedVectors',
                  'seed', 'autotuneValidationFile', 'autotuneMetric',
                  'autotunePredictions', 'autotuneDuration', 'autotuneModelSize']
     args, manually_set_args = read_args(kargs, kwargs, arg_names,

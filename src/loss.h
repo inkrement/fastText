@@ -81,6 +81,26 @@ class OneVsAllLoss : public BinaryLogisticLoss {
       real lr,
       bool backprop) override;
 };
+    
+class FocalLoss : public BinaryLogisticLoss {
+ protected:
+  double gamma_, beta_;
+  real focalBinaryLogistic(
+      int32_t target,
+      Model::State& state,
+      bool labelIsPositive,
+      real lr,
+      bool backprop) const;
+ public:
+  explicit FocalLoss(std::shared_ptr<Matrix>& wo, double gamma, double beta);
+  ~FocalLoss() noexcept override = default;
+  real forward(
+      const std::vector<int32_t>& targets,
+      int32_t targetIndex,
+      Model::State& state,
+      real lr,
+      bool backprop) override;
+};
 
 class NegativeSamplingLoss : public BinaryLogisticLoss {
  protected:

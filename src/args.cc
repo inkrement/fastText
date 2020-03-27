@@ -24,6 +24,8 @@ Args::Args() {
   minCount = 5;
   minCountLabel = 0;
   neg = 5;
+  gamma = 2;
+  beta = 1;
   wordNgrams = 1;
   loss = loss_name::ns;
   model = model_name::sg;
@@ -62,6 +64,8 @@ std::string Args::lossToString(loss_name ln) const {
       return "softmax";
     case loss_name::ova:
       return "one-vs-all";
+    case loss_name::focal:
+      return "focal";
   }
   return "Unknown loss!"; // should never happen
 }
@@ -141,6 +145,10 @@ void Args::parseArgs(const std::vector<std::string>& args) {
         minCountLabel = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-neg") {
         neg = std::stoi(args.at(ai + 1));
+      } else if (args[ai] == "-gamma") {
+        gamma = std::stoi(args.at(ai + 1));
+      } else if (args[ai] == "-beta") {
+        beta = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-wordNgrams") {
         wordNgrams = std::stoi(args.at(ai + 1));
       } else if (args[ai] == "-loss") {
@@ -153,6 +161,8 @@ void Args::parseArgs(const std::vector<std::string>& args) {
         } else if (
             args.at(ai + 1) == "one-vs-all" || args.at(ai + 1) == "ova") {
           loss = loss_name::ova;
+        } else if (args.at(ai + 1) == "focal") {
+          loss = loss_name::focal;
         } else {
           std::cerr << "Unknown loss: " << args.at(ai + 1) << std::endl;
           printHelp();
@@ -268,7 +278,9 @@ void Args::printTrainingHelp() {
       << "  -ws                 size of the context window [" << ws << "]\n"
       << "  -epoch              number of epochs [" << epoch << "]\n"
       << "  -neg                number of negatives sampled [" << neg << "]\n"
-      << "  -loss               loss function {ns, hs, softmax, one-vs-all} ["
+      << "  -beta               beta used by focal loss [" << beta << "]\n"
+      << "  -gamma              gamma used by focal loss [" << gamma << "]\n"
+      << "  -loss               loss function {ns, hs, softmax, one-vs-all, focal} ["
       << lossToString(loss) << "]\n"
       << "  -thread             number of threads (set to 1 to ensure reproducible results) ["
       << thread << "]\n"
@@ -321,9 +333,11 @@ void Args::save(std::ostream& out) {
   out.write((char*)&(maxn), sizeof(int));
   out.write((char*)&(lrUpdateRate), sizeof(int));
   out.write((char*)&(t), sizeof(double));
+  out.write((char*)&(beta), sizeof(double));
+  out.write((char*)&(gamma), sizeof(double));
 }
 
-void Args::load(std::istream& in) {
+void Args::load(std::istream& in, int32_t version) {
   in.read((char*)&(dim), sizeof(int));
   in.read((char*)&(ws), sizeof(int));
   in.read((char*)&(epoch), sizeof(int));
@@ -337,6 +351,11 @@ void Args::load(std::istream& in) {
   in.read((char*)&(maxn), sizeof(int));
   in.read((char*)&(lrUpdateRate), sizeof(int));
   in.read((char*)&(t), sizeof(double));
+    
+  if (version > 12){
+    in.read((char*)&(beta), sizeof(double));
+    in.read((char*)&(gamma), sizeof(double));
+  }
 }
 
 void Args::dump(std::ostream& out) const {
@@ -366,6 +385,10 @@ void Args::dump(std::ostream& out) const {
       << " " << lrUpdateRate << std::endl;
   out << "t"
       << " " << t << std::endl;
+  out << "beta"
+      << " " << beta << std::endl;
+  out << "gamma"
+      << " " << gamma << std::endl;
 }
 
 bool Args::hasAutotune() const {

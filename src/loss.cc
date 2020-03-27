@@ -142,6 +142,56 @@ real OneVsAllLoss::forward(
   return loss;
 }
 
+FocalLoss::FocalLoss(std::shared_ptr<Matrix>& wo, double gamma, double beta)
+    : BinaryLogisticLoss(wo), gamma_(gamma), beta_(beta) {}
+
+real FocalLoss::focalBinaryLogistic(
+    int32_t target,
+    Model::State& state,
+    bool labelIsPositive,
+    real lr,
+    bool backprop) const {
+    
+  real score;
+
+  if (labelIsPositive) {
+    score = sigmoid(wo_->dotRow(state.hidden, target) * gamma_ + beta_);
+  } else {
+    score = sigmoid(-wo_->dotRow(state.hidden, target) * gamma_ + beta_);
+  }
+  
+  if (backprop) {
+    real alpha;
+      
+    if (labelIsPositive) {
+        alpha = lr * ( - score + 1);
+    } else {
+        alpha = lr * ( score - 1);
+    }
+    
+    state.grad.addRow(*wo_, target, alpha);
+    wo_->addVectorToRow(state.hidden, target, alpha);
+  }
+
+  return -log(score)/gamma_;
+}
+    
+real FocalLoss::forward(
+    const std::vector<int32_t>& targets,
+    int32_t /* we take all targets here */,
+    Model::State& state,
+    real lr,
+    bool backprop) {
+  real loss = 0.0;
+  int32_t osz = state.output.size();
+  for (int32_t i = 0; i < osz; i++) {
+    bool isMatch = utils::contains(targets, i);
+    loss += focalBinaryLogistic(i, state, isMatch, lr, backprop);
+  }
+
+  return loss;
+}
+
 NegativeSamplingLoss::NegativeSamplingLoss(
     std::shared_ptr<Matrix>& wo,
     int neg,

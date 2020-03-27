@@ -91,6 +91,8 @@ PYBIND11_MODULE(fasttext_pybind, m) {
       .def_readwrite("maxn", &fasttext::Args::maxn)
       .def_readwrite("thread", &fasttext::Args::thread)
       .def_readwrite("t", &fasttext::Args::t)
+      .def_readwrite("beta", &fasttext::Args::beta)
+      .def_readwrite("gamma", &fasttext::Args::gamma)
       .def_readwrite("label", &fasttext::Args::label)
       .def_readwrite("verbose", &fasttext::Args::verbose)
       .def_readwrite("pretrainedVectors", &fasttext::Args::pretrainedVectors)
@@ -125,6 +127,7 @@ PYBIND11_MODULE(fasttext_pybind, m) {
       .value("ns", fasttext::loss_name::ns)
       .value("softmax", fasttext::loss_name::softmax)
       .value("ova", fasttext::loss_name::ova)
+      .value("focal", fasttext::loss_name::focal)
       .export_values();
 
   py::enum_<fasttext::metric_name>(m, "metric_name")

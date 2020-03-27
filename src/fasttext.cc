@@ -22,7 +22,7 @@
 
 namespace fasttext {
 
-constexpr int32_t FASTTEXT_VERSION = 12; /* Version 1b */
+constexpr int32_t FASTTEXT_VERSION = 13; /* Version 1b */
 constexpr int32_t FASTTEXT_FILEFORMAT_MAGIC_INT32 = 793712314;
 
 bool comparePairs(
@@ -42,6 +42,8 @@ std::shared_ptr<Loss> FastText::createLoss(std::shared_ptr<Matrix>& output) {
       return std::make_shared<SoftmaxLoss>(output);
     case loss_name::ova:
       return std::make_shared<OneVsAllLoss>(output);
+    case loss_name::focal:
+      return std::make_shared<FocalLoss>(output, args_->gamma, args_->beta);
     default:
       throw std::runtime_error("Unknown loss");
   }
@@ -232,7 +234,7 @@ void FastText::loadModel(std::istream& in) {
   args_ = std::make_shared<Args>();
   input_ = std::make_shared<DenseMatrix>();
   output_ = std::make_shared<DenseMatrix>();
-  args_->load(in);
+  args_->load(in, version);
   if (version == 11 && args_->model == model_name::sup) {
     // backward compatibility: old supervised models do not use char ngrams.
     args_->maxn = 0;
